@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Game Tebak Angka</title>
+<style>
+:root{
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg1:#e9edff;--bg2:#ffe9f3;--card:rgba(255,255,255,.78);--text:#1b2233;--muted:#5d6678;--accent:#5b4bff;--accent2:#ff5fa2;
+  --on-accent:#fff;--track:#dfe3f1;--zone:rgba(91,75,255,.28);--border:rgba(120,130,170,.28);--chip:#eef0fa;
+  --ok:#0f7a4a;--bad:#b42318;--shadow:0 20px 50px rgba(60,50,140,.18);color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg1:#12142b;--bg2:#2a1330;--card:rgba(28,31,52,.78);--text:#eef1f8;--muted:#a3adc4;--accent:#8f84ff;--accent2:#ff7ab6;
+  --on-accent:#12142b;--track:#2b3150;--zone:rgba(143,132,255,.35);--border:rgba(150,160,210,.22);--chip:#262b47;
+  --ok:#6ee7a8;--bad:#ff8b80;--shadow:0 20px 50px rgba(0,0,0,.45);color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg1:#12142b;--bg2:#2a1330;--card:rgba(28,31,52,.78);--text:#eef1f8;--muted:#a3adc4;--accent:#8f84ff;--accent2:#ff7ab6;
+  --on-accent:#12142b;--track:#2b3150;--zone:rgba(143,132,255,.35);--border:rgba(150,160,210,.22);--chip:#262b47;
+  --ok:#6ee7a8;--bad:#ff8b80;--shadow:0 20px 50px rgba(0,0,0,.45);color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:linear-gradient(135deg,var(--bg1),var(--bg2));background-attachment:fixed;color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;justify-content:center;padding:20px 14px;overflow-x:hidden}
+.blob{position:fixed;border-radius:50%;filter:blur(60px);opacity:.45;z-index:0;animation:float 12s ease-in-out infinite alternate}
+.b1{width:260px;height:260px;background:var(--accent);top:-60px;left:-60px}
+.b2{width:300px;height:300px;background:var(--accent2);bottom:-80px;right:-80px;animation-delay:-6s}
+@keyframes float{to{transform:translate(40px,30px) scale(1.15)}}
+main{position:relative;z-index:1;width:100%;max-width:460px;background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--border);border-radius:24px;padding:24px 22px;box-shadow:var(--shadow);align-self:flex-start;margin-top:2vh;text-align:center}
+h1{margin:0;font-size:1.7rem;letter-spacing:.5px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{margin:4px 0 14px;color:var(--muted);font-size:.95rem}
+.stats{display:flex;gap:8px;margin-bottom:14px}
+.stat{flex:1;background:var(--chip);border-radius:12px;padding:8px 4px;font-size:.78rem;color:var(--muted)}
+.stat b{display:block;font-size:1.25rem;color:var(--text)}
+.chips{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+.chip{flex:1;padding:8px 4px;border-radius:99px;border:1px solid var(--border);background:var(--chip);color:var(--text);font-size:.85rem;cursor:pointer;font-weight:600}
+.chip[aria-pressed="true"]{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+.hearts{font-size:1.5rem;letter-spacing:4px;min-height:1.9rem}
+.heart{display:inline-block;transition:transform .3s,opacity .3s}
+.heart.lost{opacity:.25;filter:grayscale(1);transform:scale(.8)}
+.heart.pop{animation:pop .5s}
+@keyframes pop{50%{transform:scale(1.7) rotate(-12deg)}}
+.range{position:relative;height:16px;background:var(--track);border-radius:99px;margin:18px 6px 6px}
+.zone{position:absolute;top:0;bottom:0;background:var(--zone);border-radius:99px;transition:left .4s,width .4s;
+  border:2px solid var(--accent)}
+.pin{position:absolute;top:-6px;width:12px;height:28px;margin-left:-6px;display:flex;flex-direction:column;align-items:center;font-size:.62rem;color:var(--text);animation:drop .35s}
+.pin::before{content:"";width:4px;height:100%;border-radius:2px;background:var(--accent2)}
+.pin span{position:absolute;top:30px;white-space:nowrap}
+@keyframes drop{from{transform:translateY(-14px);opacity:0}}
+.ends{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin:0 4px 4px}
+.hint{font-size:.9rem;color:var(--muted);min-height:1.3em;margin:20px 0 6px}
+.big{font-size:4rem;font-weight:800;line-height:1;margin:6px 0;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent);height:28px;margin:4px 0}
+.row{display:flex;gap:8px;align-items:center;margin:6px 0}
+.step{width:46px;height:46px;flex:none;border-radius:12px;border:1px solid var(--border);background:var(--chip);color:var(--text);font-size:1.4rem;cursor:pointer}
+input[type=number]{flex:1;min-width:0;font-size:1.25rem;text-align:center;padding:10px;border-radius:12px;border:1px solid var(--border);background:var(--chip);color:var(--text)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.go{width:100%;margin-top:10px;font-size:1.1rem;font-weight:800;padding:14px;border:0;border-radius:14px;cursor:pointer;color:#fff;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));box-shadow:0 8px 20px rgba(91,75,255,.35);transition:transform .15s}
+.go:hover{transform:translateY(-2px)}.go:active{transform:scale(.98)}
+.fb{margin-top:14px;padding:12px;border-radius:14px;background:var(--chip);font-weight:700;min-height:3.2em;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.fb small{font-weight:500;color:var(--muted)}
+.fb.hot{background:rgba(255,95,60,.18)}.fb.warm{background:rgba(255,180,40,.2)}.fb.cold{background:rgba(70,150,255,.2)}.fb.ice{background:rgba(120,200,255,.25)}
+.shake{animation:shake .4s}
+@keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.result{border-radius:16px;padding:18px;margin:14px 0 4px;font-weight:700;font-size:1.1rem}
+.result .emo{font-size:3rem;display:block;animation:pop .8s}
+.result.win{background:rgba(40,190,120,.18);color:var(--ok)}.result.lose{background:rgba(240,70,60,.15);color:var(--bad)}
+.tools{display:flex;justify-content:center;gap:10px;margin-top:16px}
+.tool{background:none;border:1px solid var(--border);color:var(--muted);border-radius:99px;padding:6px 12px;font-size:.8rem;cursor:pointer}
+[hidden]{display:none!important}
+canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div>
+<canvas id="fx"></canvas>
+<main id="card">
+  <h1>🎯 GAME TEBAK ANGKA</h1>
+  <p class="sub">Tebak angka dari 1 sampai 100!</p>
+
+  <div class="stats">
+    <div class="stat"><b id="sw">0</b>Menang</div>
+    <div class="stat"><b id="sl">0</b>Kalah</div>
+    <div class="stat"><b id="ss">0</b>Streak 🔥</div>
+  </div>
+
+  <div class="chips" id="levels">
+    <button class="chip" data-n="8" aria-pressed="false">😎 Mudah · 8</button>
+    <button class="chip" data-n="5" aria-pressed="true">🙂 Normal · 5</button>
+    <button class="chip" data-n="3" aria-pressed="false">😈 Sulit · 3</button>
+  </div>
+
+  <div class="hearts" id="hearts" aria-live="polite"></div>
+
+  <div class="range" id="range" aria-hidden="true"><div class="zone" id="zone"></div></div>
+  <div class="ends"><span>1</span><span>100</span></div>
+  <div class="hint" id="hint"></div>
+
+  <section id="play">
+    <div class="big" id="big">50</div>
+    <input type="range" id="slider" min="1" max="100" value="50" aria-label="Geser untuk memilih tebakan">
+    <div class="row">
+      <button class="step" id="minus" aria-label="Kurangi">−</button>
+      <input type="number" id="guess" min="1" max="100" step="1" inputmode="numeric" value="50" aria-label="Masukkan tebakan kamu">
+      <button class="step" id="plus" aria-label="Tambah">+</button>
+    </div>
+    <button class="go" id="go">TEBAK! 🚀</button>
+    <div class="fb" id="fb" aria-live="polite"><small>Geser, ketik, atau tekan Enter untuk menebak.</small></div>
+  </section>
+
+  <section id="end" hidden>
+    <div class="result" id="result" aria-live="polite"></div>
+    <button class="go" id="again">🔄 MAIN LAGI</button>
+  </section>
+
+  <div class="tools">
+    <button class="tool" id="snd" aria-pressed="true">🔊 Suara: nyala</button>
+    <button class="tool" id="hintbtn">💡 Petunjuk</button>
+  </div>
+</main>
+
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var MAX=5,secret,used,done,low,high,hinted,sound=true,W=0,L=0,S=0;
+  var ac=null;
+
+  function beep(f,d,t){
+    if(!sound)return;
+    try{
+      ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+      var o=ac.createOscillator(),g=ac.createGain();
+      o.type=t||"sine";o.frequency.value=f;g.gain.value=.08;
+      o.connect(g);g.connect(ac.destination);o.start();
+      g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d);o.stop(ac.currentTime+d);
+    }catch(e){}
+  }
+  function melody(a){a.forEach(function(f,i){setTimeout(function(){beep(f,.18,"triangle")},i*120)})}
+
+  function hearts(pop){
+    var h="";
+    for(var i=0;i<MAX;i++){
+      var lost=i<used;
+      h+='<span class="heart'+(lost?' lost':'')+((pop&&i===used-1)?' pop':'')+'">❤️</span>';
+    }
+    $("hearts").innerHTML=h;
+  }
+  function zone(){
+    $("zone").style.left=((low-1)/99*100)+"%";
+    $("zone").style.width=Math.max(((high-low)/99*100),2)+"%";
+    $("hint").textContent=low===1&&high===100?"Angka rahasia ada di antara 1 dan 100":
+      "Angka rahasia ada di antara "+low+" dan "+high;
+  }
+  function pin(n){
+    var p=document.createElement("div");
+    p.className="pin";p.style.left=((n-1)/99*100)+"%";
+    p.innerHTML="<span>"+n+"</span>";
+    $("range").appendChild(p);
+  }
+  function setVal(v){
+    v=Math.min(100,Math.max(1,Math.round(v)||1));
+    $("big").textContent=v;$("slider").value=v;$("guess").value=v;
+  }
+  function fb(cls,main,sub){
+    var f=$("fb");f.className="fb "+cls;
+    f.innerHTML="<span>"+main+"</span>"+(sub?"<small>"+sub+"</small>":"");
+  }
+  function stats(){$("sw").textContent=W;$("sl").textContent=L;$("ss").textContent=S}
+
+  function reset(){
+    secret=Math.floor(Math.random()*100)+1;
+    used=0;done=false;low=1;high=100;hinted=false;
+    $("range").querySelectorAll(".pin").forEach(function(p){p.remove()});
+    $("play").hidden=false;$("end").hidden=true;
+    $("hintbtn").disabled=false;
+    fb("","<small>Geser, ketik, atau tekan Enter untuk menebak.</small>");
+    $("fb").innerHTML="<small>Geser, ketik, atau tekan Enter untuk menebak.</small>";
+    setVal(50);hearts();zone();
+  }
+
+  function finish(win){
+    done=true;$("play").hidden=true;$("end").hidden=false;
+    var r=$("result");
+    if(win){
+      W++;S++;
+      r.className="result win";
+      r.innerHTML='<span class="emo">🏆</span>Mantap! Tebakan kamu benar!<br><small>Angka: '+secret+' · '+used+' percobaan</small>';
+      melody([523,659,784,1047]);boom();
+    }else{
+      L++;S=0;
+      r.className="result lose";
+      r.innerHTML='<span class="emo">💥</span>Kesempatan kamu sudah habis!<br><small>Angka yang benar adalah '+secret+'.</small>';
+      melody([330,262,196]);
+    }
+    stats();
+  }
+
+  function guess(){
+    if(done)return;
+    var n=parseInt($("guess").value,10);
+    if(isNaN(n)||n<1||n>100){fb("cold","Masukkan angka 1 sampai 100.");return}
+    used++;pin(n);hearts(true);
+    if(n===secret){finish(true);return}
+    if(n<secret)low=Math.max(low,n+1);else high=Math.min(high,n-1);
+    zone();
+    var d=Math.abs(n-secret),c,t;
+    if(d<=5){c="hot";t="🔥 Panas banget!"}
+    else if(d<=15){c="warm";t="☀️ Hangat"}
+    else if(d<=30){c="cold";t="❄️ Dingin"}
+    else{c="ice";t="🧊 Beku!"}
+    fb(c,(n<secret?"⬆️ Terlalu rendah!":"⬇️ Terlalu tinggi!"),t);
+    beep(n<secret?330:440,.15);
+    var card=$("card");card.classList.remove("shake");void card.offsetWidth;card.classList.add("shake");
+    if(used>=MAX){finish(false);return}
+    setVal(Math.round((low+high)/2));
+  }
+
+  function giveHint(){
+    if(done||hinted)return;
+    hinted=true;$("hintbtn").disabled=true;
+    var par=secret%2===0?"genap":"ganjil";
+    fb("warm","💡 Angka rahasia adalah bilangan "+par+".","Petunjuk hanya bisa dipakai sekali per ronde.");
+  }
+
+  /* confetti */
+  var cv=$("fx"),cx=cv.getContext("2d"),parts=[],raf=0;
+  function size(){cv.width=innerWidth;cv.height=innerHeight}
+  addEventListener("resize",size);size();
+  function boom(){
+    var cols=["#5b4bff","#ff5fa2","#ffc933","#2fd28a","#4aa8ff"];
+    for(var i=0;i<140;i++)parts.push({x:innerWidth/2,y:innerHeight/3,vx:(Math.random()-.5)*14,vy:Math.random()*-13-2,
+      s:Math.random()*7+4,c:cols[i%5],r:Math.random()*6,life:0});
+    if(!raf)raf=requestAnimationFrame(tick);
+  }
+  function tick(){
+    cx.clearRect(0,0,cv.width,cv.height);
+    parts=parts.filter(function(p){return p.y<innerHeight+20&&p.life<260});
+    parts.forEach(function(p){
+      p.vy+=.35;p.x+=p.vx;p.y+=p.vy;p.r+=.2;p.life++;
+      cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6);cx.restore();
+    });
+    raf=parts.length?requestAnimationFrame(tick):0;
+    if(!raf)cx.clearRect(0,0,cv.width,cv.height);
+  }
+
+  /* events */
+  $("slider").addEventListener("input",function(){setVal(this.value);beep(300+this.value*4,.04)});
+  $("guess").addEventListener("input",function(){var v=parseInt(this.value,10);if(!isNaN(v)){$("big").textContent=Math.min(100,Math.max(1,v));$("slider").value=v}});
+  $("guess").addEventListener("keydown",function(e){if(e.key==="Enter")guess()});
+  $("minus").addEventListener("click",function(){setVal(+$("guess").value-1)});
+  $("plus").addEventListener("click",function(){setVal(+$("guess").value+1)});
+  $("go").addEventListener("click",guess);
+  $("again").addEventListener("click",reset);
+  $("hintbtn").addEventListener("click",giveHint);
+  $("snd").addEventListener("click",function(){
+    sound=!sound;this.setAttribute("aria-pressed",sound);
+    this.textContent=sound?"🔊 Suara: nyala":"🔇 Suara: mati";
+  });
+  $("levels").addEventListener("click",function(e){
+    var b=e.target.closest(".chip");if(!b)return;
+    MAX=+b.dataset.n;
+    document.querySelectorAll(".chip").forEach(function(c){c.setAttribute("aria-pressed",c===b)});
+    reset();
+  });
+  reset();stats();
+})();
+</script>
+</body>
+</html>
